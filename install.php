@@ -21,22 +21,22 @@ if ($download !== FALSE) {
     }
 
     // Copy files
-    $sourceDir = glob("eMarket*")[0];
-    $destDir = getenv('DOCUMENT_ROOT');
-    if (!file_exists($destDir)) {
-        mkdir($destDir, 0755, true);
+    $source_dir = glob("eMarket*")[0];
+    $dest_dir = getenv('DOCUMENT_ROOT');
+    if (!file_exists($dest_dir)) {
+        mkdir($dest_dir, 0755, true);
     }
-    $dirIterator = new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS);
-    $iterator = new RecursiveIteratorIterator($dirIterator, RecursiveIteratorIterator::SELF_FIRST);
+    $dir_iterator = new RecursiveDirectoryIterator($source_dir, RecursiveDirectoryIterator::SKIP_DOTS);
+    $iterator = new RecursiveIteratorIterator($dir_iterator, RecursiveIteratorIterator::SELF_FIRST);
     foreach ($iterator as $object) {
-        $destPath = $destDir . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
-        ($object->isDir()) ? mkdir($destPath) : copy($object, $destPath);
+        $dest_path = $dest_dir . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+        ($object->isDir()) ? mkdir($dest_path) : copy($object, $dest_path);
     }
 
     // Delete files
-    filesRemoving($sourceDir);
+    filesRemoving($source_dir);
     filesRemoving($file_name);
-    filesRemoving($destDir . '/install.php');
+    filesRemoving($dest_dir . '/install.php');
     // redirect
     header('Location: controller/install/');
     
