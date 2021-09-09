@@ -90,7 +90,7 @@ if (isset($_GET['part']) && $_GET['part'] == '2') {
 
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
 
-    // Redirect to part 2
+    // Redirect to install page
     echo "<script>window.location.href='controller/install/';</script>";
 }
 
