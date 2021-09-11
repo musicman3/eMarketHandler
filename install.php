@@ -15,7 +15,7 @@ if (!isset($_GET['part'])) {
     $download = gitHubData();
     if ($download !== FALSE) {
         // Download and Unzip eMarket archive
-        UnzipArchive(downloadArchive());
+        UnzipArchive(downloadArchive($download));
         // Copying eMarket files
         copyingFiles();
 
@@ -90,15 +90,16 @@ function composerInstall() {
 
 /**
  * Download eMarket archive
- *
+ * 
+ * @param string $download file name
  * @return string Name zip-archive
  */
-function downloadArchive() {
+function downloadArchive($download) {
     echo '<span class="badge bg-danger">PART I</span>&nbsp;';
     echo '<span class="badge bg-success">Downloading eMarket archive</span>&nbsp;';
     ob_flush();
     flush();
-    $file = 'https://github.com/musicman3/eMarket/archive/refs/heads/master.zip';
+    $file = 'https://github.com/musicman3/eMarket/archive/refs/tags/' . $download . '.zip';
     $file_name = basename($file);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
     return $file_name;
