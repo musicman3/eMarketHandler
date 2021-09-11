@@ -5,23 +5,26 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
 // Init data
-$repo_name = 'musicman3/eMarket';
+$repo_init = 'musicman3/eMarket';
 
 // php.ini set
 ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
+// Repo name
+$repo = explode('/', $repo_init)[1];
+
 ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
 
 <?php
 if (!isset($_GET['part'])) {
-    $download = gitHubData($repo_name);
+    $download = gitHubData($repo_init);
     if ($download !== FALSE) {
-        // Download and Unzip eMarket archive
-        UnzipArchive(downloadArchive($repo_name, $download));
-        // Copying eMarket files
-        copyingFiles($repo_name);
+        // Download and Unzip GitHub archive
+        UnzipArchive(downloadArchive($repo_init, $download), $repo);
+        // Copying GitHub files
+        copyingFiles($repo);
         // Redirect to part 2
         echo "<script>window.location.href='?part=2';</script>";
     } else {
@@ -37,30 +40,31 @@ if (isset($_GET['part']) && $_GET['part'] == '2') {
 }
 
 /**
- * Download eMarket archive
+ * Download GitHub archive
  * 
- * @param string $repo_name GitHub repo name
+ * @param string $repo_init GitHub repo data
  * @param string $download file name
  * @return string Name zip-archive
  */
-function downloadArchive($repo_name, $download) {
+function downloadArchive($repo_init, $download) {
     echo '<span class="badge bg-danger">PART I</span>&nbsp;';
-    echo '<span class="badge bg-success">Downloading eMarket archive</span>&nbsp;';
+    echo '<span class="badge bg-success">Downloading ' . explode('/', $repo_init)[1] . ' archive</span>&nbsp;';
     ob_flush();
     flush();
-    $file = 'https://github.com/' . $repo_name . '/archive/refs/tags/' . $download . '.zip';
+    $file = 'https://github.com/' . $repo_init . '/archive/refs/tags/' . $download . '.zip';
     $file_name = basename($file);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
     return $file_name;
 }
 
 /**
- * Unzip eMarket archive
+ * Unzip GitHub archive
  *
- * @param string $file_name eMarket archive name
+ * @param string $file_name GutHub archive name
+ * @param string $repo GitHub repo name
  */
-function UnzipArchive($file_name) {
-    echo '<span class="badge bg-success">Unzipping eMarket archive</span>&nbsp;';
+function UnzipArchive($file_name, $repo) {
+    echo '<span class="badge bg-success">Unzipping ' . $repo . ' archive</span>&nbsp;';
     ob_flush();
     flush();
 
@@ -77,16 +81,16 @@ function UnzipArchive($file_name) {
 }
 
 /**
- * Copying eMarket files
+ * Copying GutHub files
  *
- * @param string $repo_name GitHub repo name
+ * @param string $repo GitHub repo name
  */
-function copyingFiles($repo_name) {
-    echo '<span class="badge bg-success">Copying eMarket files</span>&nbsp;';
+function copyingFiles($repo) {
+    echo '<span class="badge bg-success">Copying ' . $repo . ' files</span>&nbsp;';
     ob_flush();
     flush();
 
-    $source_dir = glob(explode('/', $repo_name)[1] . '*')[0];
+    $source_dir = glob($repo . '*')[0];
     $dest_dir = getenv('DOCUMENT_ROOT');
     if (!file_exists($dest_dir)) {
         mkdir($dest_dir, 0755, true);
@@ -184,14 +188,14 @@ function filesRemoving($path) {
 /**
  * GitHub Data
  * 
- * @param string $repo_name GitHub repo name
+ * @param string $repo_init GitHub repo data
  * @return array GitHub latest release data
  */
-function gitHubData($repo_name) {
+function gitHubData($repo_init) {
     $connect = curl_init();
     curl_setopt($connect, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($connect, CURLOPT_HTTPHEADER, ['User-Agent: eMarket']);
-    curl_setopt($connect, CURLOPT_URL, 'https://api.github.com/repos/' . $repo_name . '/releases/latest');
+    curl_setopt($connect, CURLOPT_HTTPHEADER, ['User-Agent: Installer']);
+    curl_setopt($connect, CURLOPT_URL, 'https://api.github.com/repos/' . $repo_init . '/releases/latest');
     $response_string = curl_exec($connect);
     curl_close($connect);
     if (!empty($response_string)) {
