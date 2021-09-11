@@ -4,6 +4,10 @@
   |  https://github.com/musicman3/eMarket  |
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
+// Init data
+$repo_name = 'musicman3/eMarket';
+
+// php.ini set
 ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
 ?>
@@ -12,12 +16,12 @@ ini_set('max_execution_time', 0);
 
 <?php
 if (!isset($_GET['part'])) {
-    $download = gitHubData();
+    $download = gitHubData($repo_name);
     if ($download !== FALSE) {
         // Download and Unzip eMarket archive
-        UnzipArchive(downloadArchive($download));
+        UnzipArchive(downloadArchive($repo_name, $download));
         // Copying eMarket files
-        copyingFiles();
+        copyingFiles($repo_name);
         // Redirect to part 2
         echo "<script>window.location.href='?part=2';</script>";
     } else {
@@ -30,6 +34,76 @@ if (isset($_GET['part']) && $_GET['part'] == '2') {
     composerInstall();
     // Redirect to install page
     echo "<script>window.location.href='controller/install/';</script>";
+}
+
+/**
+ * Download eMarket archive
+ * 
+ * @param string $repo_name GitHub repo name
+ * @param string $download file name
+ * @return string Name zip-archive
+ */
+function downloadArchive($repo_name, $download) {
+    echo '<span class="badge bg-danger">PART I</span>&nbsp;';
+    echo '<span class="badge bg-success">Downloading eMarket archive</span>&nbsp;';
+    ob_flush();
+    flush();
+    $file = 'https://github.com/' . $repo_name . '/archive/refs/tags/' . $download . '.zip';
+    $file_name = basename($file);
+    file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
+    return $file_name;
+}
+
+/**
+ * Unzip eMarket archive
+ *
+ * @param string $file_name eMarket archive name
+ */
+function UnzipArchive($file_name) {
+    echo '<span class="badge bg-success">Unzipping eMarket archive</span>&nbsp;';
+    ob_flush();
+    flush();
+
+    $zip = new ZipArchive;
+    $res = $zip->open(getenv('DOCUMENT_ROOT') . '/' . $file_name);
+    if ($res === TRUE) {
+        $zip->extractTo('.');
+        $zip->close();
+    } else {
+        echo '<span class="badge bg-dark">An error has occurred. Please check the permissions for the root directory.</span>&nbsp;';
+    }
+
+    filesRemoving($file_name);
+}
+
+/**
+ * Copying eMarket files
+ *
+ * @param string $repo_name GitHub repo name
+ */
+function copyingFiles($repo_name) {
+    echo '<span class="badge bg-success">Copying eMarket files</span>&nbsp;';
+    ob_flush();
+    flush();
+
+    $source_dir = glob(explode('/', $repo_name)[1] . '*')[0];
+    $dest_dir = getenv('DOCUMENT_ROOT');
+    if (!file_exists($dest_dir)) {
+        mkdir($dest_dir, 0755, true);
+    }
+    $dir_iterator = new RecursiveDirectoryIterator($source_dir, RecursiveDirectoryIterator::SKIP_DOTS);
+    $iterator = new RecursiveIteratorIterator($dir_iterator, RecursiveIteratorIterator::SELF_FIRST);
+    foreach ($iterator as $object) {
+        $dest_path = $dest_dir . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+        ($object->isDir()) ? mkdir($dest_path) : copy($object, $dest_path);
+    }
+
+    // Delete files
+    echo '<span class="badge bg-success">Cleaning</span>&nbsp;';
+    ob_flush();
+    flush();
+
+    filesRemoving($source_dir);
 }
 
 /**
@@ -87,74 +161,6 @@ function composerInstall() {
 }
 
 /**
- * Download eMarket archive
- * 
- * @param string $download file name
- * @return string Name zip-archive
- */
-function downloadArchive($download) {
-    echo '<span class="badge bg-danger">PART I</span>&nbsp;';
-    echo '<span class="badge bg-success">Downloading eMarket archive</span>&nbsp;';
-    ob_flush();
-    flush();
-    $file = 'https://github.com/musicman3/eMarket/archive/refs/tags/' . $download . '.zip';
-    $file_name = basename($file);
-    file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
-    return $file_name;
-}
-
-/**
- * Unzip eMarket archive
- *
- * @param string $file_name eMarket archive name
- */
-function UnzipArchive($file_name) {
-    echo '<span class="badge bg-success">Unzipping eMarket archive</span>&nbsp;';
-    ob_flush();
-    flush();
-
-    $zip = new ZipArchive;
-    $res = $zip->open(getenv('DOCUMENT_ROOT') . '/' . $file_name);
-    if ($res === TRUE) {
-        $zip->extractTo('.');
-        $zip->close();
-    } else {
-        echo '<span class="badge bg-dark">An error has occurred. Please check the permissions for the root directory.</span>&nbsp;';
-    }
-
-    filesRemoving($file_name);
-}
-
-/**
- * Copying eMarket files
- *
- */
-function copyingFiles() {
-    echo '<span class="badge bg-success">Copying eMarket files</span>&nbsp;';
-    ob_flush();
-    flush();
-
-    $source_dir = glob("eMarket*")[0];
-    $dest_dir = getenv('DOCUMENT_ROOT');
-    if (!file_exists($dest_dir)) {
-        mkdir($dest_dir, 0755, true);
-    }
-    $dir_iterator = new RecursiveDirectoryIterator($source_dir, RecursiveDirectoryIterator::SKIP_DOTS);
-    $iterator = new RecursiveIteratorIterator($dir_iterator, RecursiveIteratorIterator::SELF_FIRST);
-    foreach ($iterator as $object) {
-        $dest_path = $dest_dir . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
-        ($object->isDir()) ? mkdir($dest_path) : copy($object, $dest_path);
-    }
-
-    // Delete files
-    echo '<span class="badge bg-success">Cleaning</span>&nbsp;';
-    ob_flush();
-    flush();
-
-    filesRemoving($source_dir);
-}
-
-/**
  * Files removing
  *
  * @param string $path Path
@@ -177,14 +183,15 @@ function filesRemoving($path) {
 
 /**
  * GitHub Data
- *
+ * 
+ * @param string $repo_name GitHub repo name
  * @return array GitHub latest release data
  */
-function gitHubData() {
+function gitHubData($repo_name) {
     $connect = curl_init();
     curl_setopt($connect, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($connect, CURLOPT_HTTPHEADER, ['User-Agent: eMarket']);
-    curl_setopt($connect, CURLOPT_URL, 'https://api.github.com/repos/musicman3/eMarket/releases/latest');
+    curl_setopt($connect, CURLOPT_URL, 'https://api.github.com/repos/' . $repo_name . '/releases/latest');
     $response_string = curl_exec($connect);
     curl_close($connect);
     if (!empty($response_string)) {
