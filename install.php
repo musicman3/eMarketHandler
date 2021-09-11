@@ -18,7 +18,6 @@ if (!isset($_GET['part'])) {
         UnzipArchive(downloadArchive($download));
         // Copying eMarket files
         copyingFiles();
-
         // Redirect to part 2
         echo "<script>window.location.href='?part=2';</script>";
     } else {
@@ -29,10 +28,6 @@ if (!isset($_GET['part'])) {
 if (isset($_GET['part']) && $_GET['part'] == '2') {
     downloadComposer();
     composerInstall();
-
-    filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
-    filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
-
     // Redirect to install page
     echo "<script>window.location.href='controller/install/';</script>";
 }
@@ -86,6 +81,9 @@ function composerInstall() {
     }
 
     ob_end_clean();
+    
+    filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
+    filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
 }
 
 /**
