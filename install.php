@@ -167,7 +167,7 @@ function composerInstall() {
 
     filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
-    filesRemoving($root . '/temp');
+    filesRemoving(getenv('DOCUMENT_ROOT') . '/temp');
 }
 
 /**
