@@ -143,33 +143,34 @@ function composerInstall() {
     flush();
     ob_start();
 
-    // system() command or composer extract
-    if (!system('php composer.phar install')) {
-        $root = realpath(getenv('DOCUMENT_ROOT'));
-        $vendor_dir = $root . '/vendor';
-        $composerPhar = new Phar($root . '/composer.phar');
-        $composerPhar->extractTo($vendor_dir);
-        require_once($vendor_dir . '/vendor/autoload.php');
-        putenv('COMPOSER_HOME=' . $vendor_dir . '/bin/composer');
+    $root = realpath(getenv('DOCUMENT_ROOT'));
+    $vendor_dir = $root . '/vendor';
+    $composerPhar = new Phar($root . '/composer.phar');
+    $composerPhar->extractTo($vendor_dir);
+    require_once($vendor_dir . '/vendor/autoload.php');
+    putenv('COMPOSER_HOME=' . $vendor_dir . '/bin/composer');
 
-        $params = [
-            'command' => 'install'
-        ];
+    $params = [
+        'command' => 'install'
+    ];
 
-        $input = new Symfony\Component\Console\Input\ArrayInput($params);
-        $output = new Symfony\Component\Console\Output\BufferedOutput(
-                Symfony\Component\Console\Output\OutputInterface::VERBOSITY_NORMAL
-        );
+    $input = new Symfony\Component\Console\Input\ArrayInput($params);
+    $output = new Symfony\Component\Console\Output\BufferedOutput(
+            Symfony\Component\Console\Output\OutputInterface::VERBOSITY_NORMAL
+    );
 
-        $application = new Composer\Console\Application();
-        $application->setAutoExit(false);
-        $application->run($input, $output);
-    }
+    $application = new Composer\Console\Application();
+    $application->setAutoExit(false);
+    $application->run($input, $output);
 
     ob_end_clean();
 
     filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
+    filesRemoving($vendor_dir . '/vendor');
+    filesRemoving($vendor_dir . '/res');
+    filesRemoving($vendor_dir . '/src');
+    filesRemoving($vendor_dir . '/LICENSE');
 }
 
 /**
