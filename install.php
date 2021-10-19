@@ -144,7 +144,7 @@ function composerInstall() {
     ob_start();
 
     $root = realpath(getenv('DOCUMENT_ROOT'));
-    $vendor_dir = $root . '/vendor';
+    $vendor_dir = $root . '/temp/vendor';
     $composerPhar = new Phar($root . '/composer.phar');
     $composerPhar->extractTo($vendor_dir);
     require_once($vendor_dir . '/vendor/autoload.php');
@@ -167,10 +167,7 @@ function composerInstall() {
 
     filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
-    filesRemoving($vendor_dir . '/vendor');
-    filesRemoving($vendor_dir . '/res');
-    filesRemoving($vendor_dir . '/src');
-    filesRemoving($vendor_dir . '/LICENSE');
+    filesRemoving($vendor_dir . '/temp');
 }
 
 /**
