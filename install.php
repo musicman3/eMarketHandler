@@ -4,6 +4,9 @@
   |  https://github.com/musicman3/eMarket  |
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
+// Mode release/master
+$mode = 'release';
+
 // Init data
 $repo_init = 'musicman3/eMarket';
 
@@ -12,17 +15,16 @@ ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
 // Repo name
 $repo = explode('/', $repo_init)[1];
-
 ?>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
 <?php
 if (!isset($_GET['part'])) {
     $download = gitHubData($repo_init);
     if ($download !== FALSE) {
         // Download and Unzip GitHub archive
-        UnzipArchive(downloadArchive($repo_init, $download), $repo);
+        UnzipArchive(downloadArchive($repo_init, $download, $mode), $repo);
         // Copying GitHub files
         copyingFiles($repo);
         // Redirect to part 2
@@ -44,14 +46,19 @@ if (isset($_GET['part']) && $_GET['part'] == '2') {
  * 
  * @param string $repo_init GitHub repo data
  * @param string $download file name
+ * @param string $mode Mode
  * @return string Name zip-archive
  */
-function downloadArchive($repo_init, $download) {
+function downloadArchive($repo_init, $download, $mode) {
     echo '<span class="badge bg-danger">PART I</span>&nbsp;';
     echo '<span class="badge bg-success">Downloading ' . explode('/', $repo_init)[1] . ' archive</span>&nbsp;';
     ob_flush();
     flush();
-    $file = 'https://github.com/' . $repo_init . '/archive/refs/tags/' . $download . '.zip';
+    $download_path = 'heads/master';
+    if ($mode == 'release') {
+        $download_path = 'tags/' . $download;
+    }
+    $file = 'https://github.com/' . $repo_init . '/archive/refs/' . $download_path . '.zip';
     $file_name = basename($file);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
     return $file_name;
@@ -91,11 +98,12 @@ function copyingFiles($repo) {
     flush();
 
     $source_dir = glob($repo . '*')[0];
+    $copying_dir = $source_dir . '/src/' . $repo;
     $dest_dir = getenv('DOCUMENT_ROOT');
     if (!file_exists($dest_dir)) {
         mkdir($dest_dir, 0755, true);
     }
-    $dir_iterator = new RecursiveDirectoryIterator($source_dir, RecursiveDirectoryIterator::SKIP_DOTS);
+    $dir_iterator = new RecursiveDirectoryIterator($copying_dir, RecursiveDirectoryIterator::SKIP_DOTS);
     $iterator = new RecursiveIteratorIterator($dir_iterator, RecursiveIteratorIterator::SELF_FIRST);
     foreach ($iterator as $object) {
         $dest_path = $dest_dir . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
@@ -159,7 +167,7 @@ function composerInstall() {
     }
 
     ob_end_clean();
-    
+
     filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
 }
