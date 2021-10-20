@@ -13,32 +13,54 @@ $repo_init = 'musicman3/eMarket';
 // php.ini set
 ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
-// Repo name
-$repo = explode('/', $repo_init)[1];
-?>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
-<?php
-if (!isset($_GET['part'])) {
-    $download = gitHubData($repo_init);
-    if ($download !== FALSE) {
-        // Download and Unzip GitHub archive
-        UnzipArchive(downloadArchive($repo_init, $download, $mode), $repo);
-        // Copying GitHub files
+// Init
+init($repo_init, $mode);
+
+/**
+ * Init
+ * 
+ * @param string $repo_init GitHub repo data
+ * @param string $mode Mode
+ * @return string Name zip-archive
+ */
+function init($repo_init, $mode) {
+    // Repo name
+    $repo = explode('/', $repo_init)[1];
+
+    if (inGET('step') == '1') {
+        $download = gitHubData($repo_init);
+        if ($download !== FALSE) {
+            downloadArchive($repo_init, $download, $mode);
+        }
+    }
+    if (inGET('step') == '2') {
+        UnzipArchive(inGET('param'), $repo);
+    }
+    if (inGET('step') == '3') {
         copyingFiles($repo);
-        // Redirect to part 2
-        echo "<script>window.location.href='?part=2';</script>";
-    } else {
-        echo '<span class="badge bg-dark">No data received from GitHub. Please refresh the page to repeat the installation procedure.</span>&nbsp;';
+    }
+    if (inGET('step') == '4') {
+        downloadComposer();
+    }
+    if (inGET('step') == '5') {
+        composerInstall();
     }
 }
 
-if (isset($_GET['part']) && $_GET['part'] == '2') {
-    downloadComposer();
-    composerInstall();
-    // Redirect to install page
-    echo "<script>window.location.href='controller/install/';</script>";
+/**
+ * GET validation
+ *
+ * @param string $input Input data
+ * @return mixed
+ */
+function inGET(?string $input): mixed {
+    if (filter_input(INPUT_GET, $input, FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FORCE_ARRAY) == TRUE) {
+        if (isset($_GET[$input])) {
+            return $_GET[$input];
+        }
+    }
+    return FALSE;
 }
 
 /**
@@ -50,10 +72,6 @@ if (isset($_GET['part']) && $_GET['part'] == '2') {
  * @return string Name zip-archive
  */
 function downloadArchive($repo_init, $download, $mode) {
-    echo '<span class="badge bg-danger">PART I</span>&nbsp;';
-    echo '<span class="badge bg-success">Downloading ' . explode('/', $repo_init)[1] . ' archive</span>&nbsp;';
-    ob_flush();
-    flush();
     $download_path = 'heads/master';
     if ($mode == 'release') {
         $download_path = 'tags/' . $download;
@@ -61,7 +79,9 @@ function downloadArchive($repo_init, $download, $mode) {
     $file = 'https://github.com/' . $repo_init . '/archive/refs/' . $download_path . '.zip';
     $file_name = basename($file);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
-    return $file_name;
+
+    echo json_encode(['1', 'Unzipping archive', '2', $file_name]);
+    exit;
 }
 
 /**
@@ -71,10 +91,6 @@ function downloadArchive($repo_init, $download, $mode) {
  * @param string $repo GitHub repo name
  */
 function UnzipArchive($file_name, $repo) {
-    echo '<span class="badge bg-success">Unzipping ' . $repo . ' archive</span>&nbsp;';
-    ob_flush();
-    flush();
-
     $zip = new ZipArchive;
     $res = $zip->open(getenv('DOCUMENT_ROOT') . '/' . $file_name);
     if ($res === TRUE) {
@@ -85,6 +101,9 @@ function UnzipArchive($file_name, $repo) {
     }
 
     filesRemoving($file_name);
+
+    echo json_encode(['1', 'Copying ' . $repo . ' files', '3', '0']);
+    exit;
 }
 
 /**
@@ -93,10 +112,6 @@ function UnzipArchive($file_name, $repo) {
  * @param string $repo GitHub repo name
  */
 function copyingFiles($repo) {
-    echo '<span class="badge bg-success">Copying ' . $repo . ' files</span>&nbsp;';
-    ob_flush();
-    flush();
-
     $source_dir = glob($repo . '*')[0];
     $copying_dir = $source_dir . '/src/' . $repo;
     $dest_dir = getenv('DOCUMENT_ROOT');
@@ -110,12 +125,10 @@ function copyingFiles($repo) {
         ($object->isDir()) ? mkdir($dest_path) : copy($object, $dest_path);
     }
 
-    // Delete files
-    echo '<span class="badge bg-success">Cleaning</span>&nbsp;';
-    ob_flush();
-    flush();
-
     filesRemoving($source_dir);
+
+    echo json_encode(['1', 'Downloading composer.phar', '4', '0']);
+    exit;
 }
 
 /**
@@ -123,14 +136,12 @@ function copyingFiles($repo) {
  *
  */
 function downloadComposer() {
-    echo '<span class="badge bg-danger">PART II</span>&nbsp;';
-    echo '<span class="badge bg-success">Downloading composer.phar</span>&nbsp;';
-    ob_flush();
-    flush();
-
     $file_composer = 'https://getcomposer.org/download/latest-stable/composer.phar';
     $file_name_composer = basename($file_composer);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name_composer, file_get_contents($file_composer));
+
+    echo json_encode(['1', 'Installing vendor packages', '5', '0']);
+    exit;
 }
 
 /**
@@ -138,11 +149,6 @@ function downloadComposer() {
  *
  */
 function composerInstall() {
-    echo '<span class="badge bg-success">Installing vendor packages</span>&nbsp;';
-    ob_flush();
-    flush();
-    ob_start();
-
     $root = realpath(getenv('DOCUMENT_ROOT'));
     $vendor_dir = $root . '/temp/vendor';
     $composerPhar = new Phar($root . '/composer.phar');
@@ -163,11 +169,12 @@ function composerInstall() {
     $application->setAutoExit(false);
     $application->run($input, $output);
 
-    ob_end_clean();
-
     filesRemoving(getenv('DOCUMENT_ROOT') . '/composer.phar');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/install.php');
     filesRemoving(getenv('DOCUMENT_ROOT') . '/temp');
+
+    echo json_encode(['Done']);
+    exit;
 }
 
 /**
@@ -213,3 +220,42 @@ function gitHubData($repo_init) {
         return FALSE;
     }
 }
+?>
+<head>
+    <link href = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel = "stylesheet" integrity = "sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin = "anonymous">
+    <script src = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity = "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin = "anonymous"></script>
+    <script>
+        function getUpdate(url) {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', url, false);
+            xhr.send();
+            if (xhr.status === 200) {
+                success(xhr);
+            }
+        }
+
+        function success(xhr) {
+            var data = xhr.response;
+            var parse = JSON.parse(data);
+            if (parse[0] === '1' && Number(parse[2]) < 6) {
+                document.querySelector('#part_I').insertAdjacentHTML('beforeend', '<div><span class="badge bg-success">' + parse[1] + '</span>&nbsp;</div>');
+                document.querySelector('#step').innerHTML = 'Step ' + parse[2] + ' of 5';
+                getUpdate(window.location.href + '?step=' + parse[2] + '&param=' + parse[3]);
+            }
+            if (parse[0] === 'Done') {
+                window.location.href = 'controller/install/';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="card text-center">
+        <div class="card-header text-dark bg-warning">Attention! The eMarket installation is being prepared. Please do not refresh the page.</div>
+        <div id="part_I" class="card-body">
+            <div><span class="badge bg-danger">ACTIONS:</span>&nbsp;</div>
+            <div><span class="badge bg-success">Downloading <?php echo explode('/', $repo_init)[1] ?> archive</span>&nbsp;</div>
+        </div>
+        <div class="card-footer bg-transparent"><div><span id="step" class="badge bg-danger">Step 1 of 5</span>&nbsp;</div></div>
+    </div>
+    <script>getUpdate(window.location.href + '?step=1');</script>
+</body>
