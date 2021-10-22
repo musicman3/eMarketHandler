@@ -6,25 +6,22 @@
 
 // Mode release/master
 $mode = 'release';
-
 // Init data
 $repo_init = 'musicman3/eMarket';
+// Init
+init($repo_init, $mode);
 
 // php.ini set
 ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
-
-// Init
-init($repo_init, $mode);
 
 /**
  * Init
  * 
  * @param string $repo_init GitHub repo data
  * @param string $mode Mode
- * @return string Name zip-archive
  */
-function init($repo_init, $mode) {
+function init(string $repo_init, string $mode): void {
     // Repo name
     $repo = explode('/', $repo_init)[1];
 
@@ -32,6 +29,9 @@ function init($repo_init, $mode) {
         $download = gitHubData($repo_init);
         if ($download !== FALSE) {
             downloadArchive($repo_init, $download, $mode);
+        } else {
+            echo json_encode(['Error', 'No data received from GitHub. Please refresh the page to repeat the installation procedure.']);
+            exit;
         }
     }
     if (inGET('step') == '2') {
@@ -69,9 +69,8 @@ function inGET(?string $input): mixed {
  * @param string $repo_init GitHub repo data
  * @param string $download file name
  * @param string $mode Mode
- * @return string Name zip-archive
  */
-function downloadArchive($repo_init, $download, $mode) {
+function downloadArchive(string $repo_init, string $download, string $mode): void {
     $download_path = 'heads/master';
     if ($mode == 'release') {
         $download_path = 'tags/' . $download;
@@ -90,14 +89,15 @@ function downloadArchive($repo_init, $download, $mode) {
  * @param string $file_name GutHub archive name
  * @param string $repo GitHub repo name
  */
-function UnzipArchive($file_name, $repo) {
+function UnzipArchive(string $file_name, string $repo): void {
     $zip = new ZipArchive;
     $res = $zip->open(getenv('DOCUMENT_ROOT') . '/' . $file_name);
     if ($res === TRUE) {
         $zip->extractTo('.');
         $zip->close();
     } else {
-        echo '<span class="badge bg-dark">An error has occurred. Please check the permissions for the root directory.</span>&nbsp;';
+        echo json_encode(['Error', 'An error has occurred. Please check the permissions for the root directory.']);
+        exit;
     }
 
     filesRemoving($file_name);
@@ -111,7 +111,7 @@ function UnzipArchive($file_name, $repo) {
  *
  * @param string $repo GitHub repo name
  */
-function copyingFiles($repo) {
+function copyingFiles(string $repo): void {
     $source_dir = glob($repo . '*')[0];
     $copying_dir = $source_dir . '/src/' . $repo;
     $dest_dir = getenv('DOCUMENT_ROOT');
@@ -135,7 +135,7 @@ function copyingFiles($repo) {
  * Download composer.phar
  *
  */
-function downloadComposer() {
+function downloadComposer(): void {
     $file_composer = 'https://getcomposer.org/download/latest-stable/composer.phar';
     $file_name_composer = basename($file_composer);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name_composer, file_get_contents($file_composer));
@@ -148,7 +148,7 @@ function downloadComposer() {
  * Composer install
  *
  */
-function composerInstall() {
+function composerInstall(): void {
     $root = realpath(getenv('DOCUMENT_ROOT'));
     $vendor_dir = $root . '/temp/vendor';
     $composerPhar = new Phar($root . '/composer.phar');
@@ -183,7 +183,7 @@ function composerInstall() {
  * @param string $path Path
  * @return bool
  */
-function filesRemoving($path) {
+function filesRemoving(string $path): mixed {
     if (is_file($path)) {
         return unlink($path);
     }
@@ -204,7 +204,7 @@ function filesRemoving($path) {
  * @param string $repo_init GitHub repo data
  * @return array GitHub latest release data
  */
-function gitHubData($repo_init) {
+function gitHubData(string $repo_init): mixed {
     $connect = curl_init();
     curl_setopt($connect, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($connect, CURLOPT_HTTPHEADER, ['User-Agent: Installer']);
@@ -221,41 +221,48 @@ function gitHubData($repo_init) {
     }
 }
 ?>
-<head>
-    <link href = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel = "stylesheet" integrity = "sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin = "anonymous">
-    <script src = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity = "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin = "anonymous"></script>
-    <script>
-        function getUpdate(url) {
-            let xhr = new XMLHttpRequest();
-            xhr.open('GET', url, false);
-            xhr.send();
-            if (xhr.status === 200) {
-                success(xhr);
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+    <head>
+        <link href = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel = "stylesheet" integrity = "sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin = "anonymous">
+        <script src = "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity = "sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin = "anonymous"></script>
+        <script>
+            function getUpdate(url) {
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET', url, false);
+                xhr.send();
+                if (xhr.status === 200) {
+                    success(xhr);
+                }
             }
-        }
 
-        function success(xhr) {
-            var data = xhr.response;
-            var parse = JSON.parse(data);
-            if (parse[0] === '1' && Number(parse[2]) < 6) {
-                document.querySelector('#part_I').insertAdjacentHTML('beforeend', '<div><span class="badge bg-success">' + parse[1] + '</span>&nbsp;</div>');
-                document.querySelector('#step').innerHTML = 'Step ' + parse[2] + ' of 5';
-                getUpdate(window.location.href + '?step=' + parse[2] + '&param=' + parse[3]);
+            function success(xhr) {
+                var data = xhr.response;
+                var parse = JSON.parse(data);
+                if (parse[0] === '1' && Number(parse[2]) < 6) {
+                    document.querySelector('#part_I').insertAdjacentHTML('beforeend', '<div><span class="badge bg-success">' + parse[1] + '</span>&nbsp;</div>');
+                    document.querySelector('#step').innerHTML = 'Step ' + parse[2] + ' of 5';
+                    getUpdate(window.location.href + '?step=' + parse[2] + '&param=' + parse[3]);
+                }
+                if (parse[0] === 'Error') {
+                    document.querySelector('#part_I').insertAdjacentHTML('beforeend', '<div><span class="badge bg-dark">' + parse[1] + '</span>&nbsp;</div>');
+                }
+
+                if (parse[0] === 'Done') {
+                    window.location.href = 'controller/install/';
+                }
             }
-            if (parse[0] === 'Done') {
-                window.location.href = 'controller/install/';
-            }
-        }
-    </script>
-</head>
-<body>
-    <div class="card text-center">
-        <div class="card-header text-dark bg-warning">Attention! The eMarket installation is being prepared. Please do not refresh the page.</div>
-        <div id="part_I" class="card-body">
-            <div><span class="badge bg-danger">ACTIONS:</span>&nbsp;</div>
-            <div><span class="badge bg-success">Downloading <?php echo explode('/', $repo_init)[1] ?> archive</span>&nbsp;</div>
+        </script>
+    </head>
+    <body>
+        <div class="card text-center">
+            <div class="card-header text-dark bg-warning">Attention! The eMarket installation is being prepared. Please do not refresh the page.</div>
+            <div id="part_I" class="card-body">
+                <div><span class="badge bg-danger">ACTIONS:</span>&nbsp;</div>
+                <div><span class="badge bg-success">Downloading <?php echo explode('/', $repo_init)[1] ?> archive</span>&nbsp;</div>
+            </div>
+            <div class="card-footer bg-transparent"><div><span id="step" class="badge bg-danger">Step 1 of 5</span>&nbsp;</div></div>
         </div>
-        <div class="card-footer bg-transparent"><div><span id="step" class="badge bg-danger">Step 1 of 5</span>&nbsp;</div></div>
-    </div>
-    <script>getUpdate(window.location.href + '?step=1');</script>
-</body>
+        <script>getUpdate(window.location.href + '?step=1');</script>
+    </body>
+</html>
