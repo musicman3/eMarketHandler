@@ -23,7 +23,7 @@ ini_set('max_execution_time', 0);
  */
 function init($repo_init, $mode) {
     if (version_compare(PHP_VERSION, '8.0.0') < 0) {
-        echo 'Attention. Your PHP version < 8.0. Please, use version >= 8.0';
+        echo 'Attention. Your PHP version < 8.0. Please use version >= 8.0';
         exit;
     }
 
