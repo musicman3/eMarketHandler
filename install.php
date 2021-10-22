@@ -21,7 +21,12 @@ ini_set('max_execution_time', 0);
  * @param string $repo_init GitHub repo data
  * @param string $mode Mode
  */
-function init(string $repo_init, string $mode): void {
+function init($repo_init, $mode) {
+    if (version_compare(PHP_VERSION, '8.0.0') < 0) {
+        echo 'Attention. Your PHP version < 8.0. Please, use version >= 8.0';
+        exit;
+    }
+
     // Repo name
     $repo = explode('/', $repo_init)[1];
 
@@ -54,7 +59,7 @@ function init(string $repo_init, string $mode): void {
  * @param string $input Input data
  * @return mixed
  */
-function inGET(?string $input): mixed {
+function inGET($input) {
     if (filter_input(INPUT_GET, $input, FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FORCE_ARRAY) == TRUE) {
         if (isset($_GET[$input])) {
             return $_GET[$input];
@@ -70,7 +75,7 @@ function inGET(?string $input): mixed {
  * @param string $download file name
  * @param string $mode Mode
  */
-function downloadArchive(string $repo_init, string $download, string $mode): void {
+function downloadArchive($repo_init, $download, $mode) {
     $download_path = 'heads/master';
     if ($mode == 'release') {
         $download_path = 'tags/' . $download;
@@ -89,7 +94,7 @@ function downloadArchive(string $repo_init, string $download, string $mode): voi
  * @param string $file_name GutHub archive name
  * @param string $repo GitHub repo name
  */
-function UnzipArchive(string $file_name, string $repo): void {
+function UnzipArchive($file_name, $repo) {
     $zip = new ZipArchive;
     $res = $zip->open(getenv('DOCUMENT_ROOT') . '/' . $file_name);
     if ($res === TRUE) {
@@ -111,7 +116,7 @@ function UnzipArchive(string $file_name, string $repo): void {
  *
  * @param string $repo GitHub repo name
  */
-function copyingFiles(string $repo): void {
+function copyingFiles($repo) {
     $source_dir = glob($repo . '*')[0];
     $copying_dir = $source_dir . '/src/' . $repo;
     $dest_dir = getenv('DOCUMENT_ROOT');
@@ -135,7 +140,7 @@ function copyingFiles(string $repo): void {
  * Download composer.phar
  *
  */
-function downloadComposer(): void {
+function downloadComposer() {
     $file_composer = 'https://getcomposer.org/download/latest-stable/composer.phar';
     $file_name_composer = basename($file_composer);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name_composer, file_get_contents($file_composer));
@@ -148,7 +153,7 @@ function downloadComposer(): void {
  * Composer install
  *
  */
-function composerInstall(): void {
+function composerInstall() {
     $root = realpath(getenv('DOCUMENT_ROOT'));
     $vendor_dir = $root . '/temp/vendor';
     $composerPhar = new Phar($root . '/composer.phar');
@@ -183,7 +188,7 @@ function composerInstall(): void {
  * @param string $path Path
  * @return bool
  */
-function filesRemoving(string $path): mixed {
+function filesRemoving($path) {
     if (is_file($path)) {
         return unlink($path);
     }
@@ -204,7 +209,7 @@ function filesRemoving(string $path): mixed {
  * @param string $repo_init GitHub repo data
  * @return array GitHub latest release data
  */
-function gitHubData(string $repo_init): mixed {
+function gitHubData($repo_init) {
     $connect = curl_init();
     curl_setopt($connect, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($connect, CURLOPT_HTTPHEADER, ['User-Agent: Installer']);
