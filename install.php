@@ -4,16 +4,16 @@
   |  https://github.com/musicman3/eMarket  |
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-// Mode release/master
-$mode = 'release';
-// Init data
-$repo_init = 'musicman3/eMarket';
-// Init
-init($repo_init, $mode);
+/* ++++++++++++++++++++++++++++++++++++++++ */
+$mode = 'release'; // Mode release/master
+$repo_init = 'musicman3/eMarket'; // GitHub name & repo
+/* ++++++++++++++++++++++++++++++++++++++++ */
 
 // php.ini set
 ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
+// Init
+init($repo_init, $mode);
 
 /**
  * Init
