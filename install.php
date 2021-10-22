@@ -84,7 +84,7 @@ function downloadArchive($repo_init, $download, $mode) {
     $file_name = basename($file);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name, file_get_contents($file));
 
-    echo json_encode(['1', 'Unzipping archive', '2', $file_name]);
+    echo json_encode(['Install', 'Unzipping archive', '2', $file_name]);
     exit;
 }
 
@@ -107,7 +107,7 @@ function UnzipArchive($file_name, $repo) {
 
     filesRemoving($file_name);
 
-    echo json_encode(['1', 'Copying ' . $repo . ' files', '3', '0']);
+    echo json_encode(['Install', 'Copying ' . $repo . ' files', '3', '0']);
     exit;
 }
 
@@ -132,7 +132,7 @@ function copyingFiles($repo) {
 
     filesRemoving($source_dir);
 
-    echo json_encode(['1', 'Downloading composer.phar', '4', '0']);
+    echo json_encode(['Install', 'Downloading composer.phar', '4', '0']);
     exit;
 }
 
@@ -145,7 +145,7 @@ function downloadComposer() {
     $file_name_composer = basename($file_composer);
     file_put_contents(getenv('DOCUMENT_ROOT') . '/' . $file_name_composer, file_get_contents($file_composer));
 
-    echo json_encode(['1', 'Installing vendor packages', '5', '0']);
+    echo json_encode(['Install', 'Installing vendor packages', '5', '0']);
     exit;
 }
 
@@ -244,8 +244,8 @@ function gitHubData($repo_init) {
             function success(xhr) {
                 var data = xhr.response;
                 var parse = JSON.parse(data);
-                if (parse[0] === '1' && Number(parse[2]) < 6) {
-                    document.querySelector('#part_I').insertAdjacentHTML('beforeend', '<div><span class="badge bg-success">' + parse[1] + '</span>&nbsp;</div>');
+                if (parse[0] === 'Install' && Number(parse[2]) < 6) {
+                    document.querySelector('#parts').insertAdjacentHTML('beforeend', '<div><span class="badge bg-success">' + parse[1] + '</span>&nbsp;</div>');
                     document.querySelector('#step').innerHTML = 'Step ' + parse[2] + ' of 5';
                     getUpdate(window.location.href + '?step=' + parse[2] + '&param=' + parse[3]);
                 }
@@ -262,7 +262,7 @@ function gitHubData($repo_init) {
     <body>
         <div class="card text-center">
             <div class="card-header text-dark bg-warning">Attention! The eMarket installation is being prepared. Please do not refresh the page.</div>
-            <div id="part_I" class="card-body">
+            <div id="parts" class="card-body">
                 <div><span class="badge bg-danger">ACTIONS:</span>&nbsp;</div>
                 <div><span class="badge bg-success">Downloading <?php echo explode('/', $repo_init)[1] ?> archive</span>&nbsp;</div>
             </div>
